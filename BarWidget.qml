@@ -43,6 +43,25 @@ BarWidget {
   readonly property var workspaceValues: Hyprland.workspaces.values
   readonly property var monitorValues: Hyprland.monitors.values
   readonly property int focusedId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1
+  readonly property var thumbnails: {
+    if (!root.bar || !root.bar.shell || typeof root.bar.shell.serviceFor !== "function") return null
+    return root.bar.shell.serviceFor("mlclifton.workspace-thumbnails")
+  }
+  property var hoveredAnchor: null
+  property var pendingAnchor: null
+  property int pendingWorkspace: -1
+  property string pendingMonitor: ""
+  property var previewAnchor: null
+  property int previewWorkspace: -1
+  property string previewMonitor: ""
+  readonly property var previewFrame: {
+    if (!root.thumbnails || root.previewWorkspace < 1) return null
+    return root.thumbnails.frameFor(root.previewWorkspace, root.previewMonitor)
+  }
+  readonly property real previewAspect: {
+    if (!root.thumbnails) return 16 / 9
+    return root.thumbnails.aspectForMonitor(root.previewMonitor)
+  }
   readonly property var items: {
     var sink = root.focusedId
     var monitors = root.monitorValues
@@ -170,6 +189,48 @@ BarWidget {
     Hyprland.dispatch("hl.dsp.focus({ workspace = \"" + n + "\" })")
   }
 
+  function requestPreview(anchor, id, monitor) {
+    if (!root.thumbnails || !anchor) return
+    if (root.bar) root.bar.hideTooltip(anchor)
+    previewCloseTimer.stop()
+    root.hoveredAnchor = anchor
+    root.pendingAnchor = anchor
+    root.pendingWorkspace = Number(id)
+    root.pendingMonitor = root.connectorName(monitor)
+    previewOpenTimer.restart()
+  }
+
+  function leavePreview(anchor) {
+    if (root.hoveredAnchor === anchor) root.hoveredAnchor = null
+    if (root.pendingAnchor === anchor) {
+      root.pendingAnchor = null
+      previewOpenTimer.stop()
+    }
+    if (root.hoveredAnchor === null) previewCloseTimer.restart()
+  }
+
+  function openPreview() {
+    if (!root.pendingAnchor) {
+      root.closePreview()
+      return
+    }
+    root.previewAnchor = root.pendingAnchor
+    root.previewWorkspace = root.pendingWorkspace
+    root.previewMonitor = root.pendingMonitor
+    root.pendingAnchor = null
+    if (root.bar) root.bar.hideTooltip(root.previewAnchor)
+  }
+
+  function closePreview() {
+    previewOpenTimer.stop()
+    previewCloseTimer.stop()
+    root.pendingAnchor = null
+    root.hoveredAnchor = null
+    root.previewAnchor = null
+    root.previewWorkspace = -1
+    root.previewMonitor = ""
+  }
+
   function tooltipFor(item) {
     if (!item) return ""
     var isThis = item.monitor && root.thisMonitorName !== "" && item.monitor === root.thisMonitorName
@@ -184,6 +245,73 @@ BarWidget {
     if (isThis && item.onScreen) where += " · you are here"
     else if (item.onScreen) where += " · on that screen now"
     return root.plain(where)
+  }
+
+  Timer {
+    id: previewOpenTimer
+    interval: 120
+    onTriggered: root.openPreview()
+  }
+
+  Timer {
+    id: previewCloseTimer
+    interval: 200
+    onTriggered: root.closePreview()
+  }
+
+  Loader {
+    id: previewLoader
+    active: root.previewAnchor !== null
+
+    sourceComponent: PopupCard {
+      id: previewCard
+
+      readonly property real cardWidth: Style.space(300)
+      readonly property real cardHeight: previewCard.cardWidth / (root.previewAspect > 0 ? root.previewAspect : 16 / 9)
+
+      anchorItem: root.previewAnchor
+      bar: root.bar
+      owner: root
+      triggerMode: "hover"
+      padding: Style.space(6)
+      contentWidth: previewCard.cardWidth + previewCard.padding * 2
+      contentHeight: previewCard.cardHeight + previewCard.verticalContentInset
+      open: root.previewAnchor !== null
+
+      onOpenChanged: {
+        if (!previewCard.open) return
+        Qt.callLater(function() {
+          if (root.bar && root.bar.activePopout === previewCard.coordinatorKey)
+            root.bar.releasePopout(previewCard.coordinatorKey)
+        })
+      }
+
+      onContainsMouseChanged: {
+        if (previewCard.containsMouse) previewCloseTimer.stop()
+        else if (root.hoveredAnchor === null) previewCloseTimer.restart()
+      }
+
+      Loader {
+        anchors.fill: parent
+        sourceComponent: root.thumbnails ? root.thumbnails.thumbnailComponent : null
+        onLoaded: {
+          if (!item) return
+          item.frame = Qt.binding(function() { return root.previewFrame })
+          item.wallpaper = Qt.binding(function() { return root.thumbnails ? root.thumbnails.wallpaper : "" })
+          item.radius = Style.cornerRadius / 2
+          item.borderColor = Color.popups.border
+          item.borderWidth = 1
+        }
+      }
+
+      MouseArea {
+        anchors.fill: parent
+        z: 100
+        acceptedButtons: Qt.LeftButton
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.focusWorkspace(root.previewWorkspace)
+      }
+    }
   }
 
   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(1.5)
@@ -203,6 +331,7 @@ BarWidget {
       model: root.items
 
       WidgetButton {
+        id: pill
         required property var modelData
 
         readonly property bool isSep: modelData && modelData.kind === "sep"
@@ -240,6 +369,15 @@ BarWidget {
         fixedHeight: root.barSize
         onPressed: function() {
           if (isWs) root.focusWorkspace(workspaceId)
+        }
+
+        Connections {
+          target: pill
+          function onTooltipHoveredChanged() {
+            if (!pill.isWs) return
+            if (pill.tooltipHovered) root.requestPreview(pill, pill.workspaceId, pill.modelData.monitor)
+            else root.leavePreview(pill)
+          }
         }
       }
     }
