@@ -1,6 +1,8 @@
 # Implementation notes
 
-Working notes for `jordan.workspaces`, an Omarchy bar widget.
+Working notes for this Omarchy bar widget. It installs as plugin id
+`jordan.workspaces` — inherited from upstream and not yet renamed, so the id and the
+installed directory still carry upstream's namespace even though the code here does not.
 
 **This file exists to prime a coding agent's context.** Read it before touching
 anything: it records what a full repo review would otherwise have to rediscover
@@ -97,8 +99,20 @@ active workspace renders as `[n]` with nothing parenthesised. Degraded but harml
 
 ## Testing loop
 
-The installed copy is a plain git checkout at `~/.config/omarchy/plugins/jordan.workspaces`.
-There is no `omarchy plugin` dev-link subcommand, so:
+The installed copy is a plain git checkout at `~/.config/omarchy/plugins/jordan.workspaces`
+— named for the plugin id, not the repo. **Check what it tracks before trusting it.** It was
+installed from upstream and is still a clone of `jordanpartridge/omarchy-workspaces` at
+`e3d5e21`, so a `git checkout` or `omarchy plugin update` in there restores *upstream's*
+widget: no parens, the monitor label pills back, and clicking a pill silently doing nothing.
+Reinstall it from `origin` to make that directory the fork's code:
+
+```bash
+omarchy plugin remove jordan.workspaces
+omarchy plugin add https://github.com/mlclifton/omarchy-workspaces-by-monitor.git
+omarchy plugin enable jordan.workspaces
+```
+
+There is no `omarchy plugin` dev-link subcommand, so iterating still means copying over it:
 
 ```bash
 cp BarWidget.qml ~/.config/omarchy/plugins/jordan.workspaces/BarWidget.qml
@@ -106,7 +120,8 @@ omarchy restart shell
 ```
 
 That leaves the installed checkout dirty, which makes `omarchy plugin update
-jordan.workspaces` fail until you revert:
+jordan.workspaces` fail until you revert — and the revert restores whatever that checkout
+tracks, so make sure that is `origin` and not upstream:
 
 ```bash
 git -C ~/.config/omarchy/plugins/jordan.workspaces checkout BarWidget.qml && omarchy restart shell
@@ -129,7 +144,8 @@ tooltips), so the `L/R` two-monitor path is **not** exercised here; reason about
 Structural checks, both fast and worth running before any commit:
 
 ```bash
-./test_structure.sh          # greps for pillText, moduleName, README install/remove commands
+./test_structure.sh          # greps for pillText, moduleName, the Lua dispatcher,
+                             # and the README's install URL + upstream attribution
 omarchy plugin validate .    # manifest against the plugin schema
 ```
 
@@ -147,8 +163,9 @@ Zero comments in `BarWidget.qml`, and the existing code is deliberate about it. 
 
 Hovering a `ws` pill opens a monitor-shaped thumbnail of that workspace. The
 widget draws none of it: the thumbnail comes from a separate **service** plugin
-at `~/Projects/omarchy-workspace-thumbnails`, whose `IMPLEMENTATION.md` is the
-place to look for anything about the thumbnail itself.
+at `~/Projects/omarchy-workspace-thumbnails`
+(https://github.com/mlclifton/omarchy-workspace-thumbnail-svc), whose
+`IMPLEMENTATION.md` is the place to look for anything about the thumbnail itself.
 
 Why a service and not code in here: bar widgets cannot reach into another
 plugin's directory (`PluginRegistry.entryPointUrl` sandboxes entry points to
@@ -165,8 +182,8 @@ The wiring in `BarWidget.qml`:
   `previewOpenTimer` (120ms) and `previewCloseTimer` (200ms).
 - A `Loader` holding a `PopupCard`, sized `Style.space(300)` wide by
   `300 / previewAspect` so the card follows each monitor's shape.
-- A `Connections` on each pill's `tooltipHovered`, gated on `isWs` so `label`
-  and `sep` pills keep their tooltips and open nothing.
+- A `Connections` on each pill's `tooltipHovered`, gated on `isWs` so `sep`
+  pills keep their tooltip and open nothing.
 
 Four things that will bite:
 
