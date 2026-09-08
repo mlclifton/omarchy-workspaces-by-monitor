@@ -18,7 +18,8 @@ id=$(jq -r .id manifest.json)
 jq -e '.omarchy.clonedFrom | not' manifest.json >/dev/null || fail "clonedFrom must be absent"
 
 rg -q 'omarchy plugin remove jordan.workspaces' README.md || fail "README missing remove command"
-rg -q 'omarchy plugin add https://github.com/jordanpartridge/omarchy-workspaces.git' README.md || fail "README missing add URL"
+rg -q 'omarchy plugin add https://github.com/mlclifton/omarchy-workspaces-by-monitor.git' README.md || fail "README missing add URL"
+rg -q 'fork of \[jordanpartridge/omarchy-workspaces\]' README.md || fail "README missing upstream attribution"
 
 if rg -q 'bar\.run\(|clonedFrom|moduleName: "omarchy' BarWidget.qml; then
   fail "forbidden strings in BarWidget.qml"
