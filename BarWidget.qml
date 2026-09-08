@@ -167,7 +167,7 @@ BarWidget {
   function focusWorkspace(id) {
     var n = Number(id)
     if (n !== n || n < 1 || n > root.maxWorkspaceId || Math.floor(n) !== n) return
-    Hyprland.dispatch("workspace " + n)
+    Hyprland.dispatch("hl.dsp.focus({ workspace = \"" + n + "\" })")
   }
 
   function tooltipFor(item) {

@@ -24,7 +24,12 @@ if rg -q 'bar\.run\(|clonedFrom|moduleName: "omarchy' BarWidget.qml; then
   fail "forbidden strings in BarWidget.qml"
 fi
 rg -q 'moduleName: "jordan.workspaces"' BarWidget.qml || fail "moduleName mismatch"
-rg -q 'Hyprland.dispatch\("workspace "' BarWidget.qml || fail "expected Hyprland.dispatch"
+# Workspace switching must go through Hyprland IPC, never a shelled-out command.
+# Hyprland 0.56+ parses dispatch arguments as Lua, so the legacy "workspace N"
+# string is a syntax error on the wire and silently does nothing.
+rg -q 'Hyprland\.dispatch\(' BarWidget.qml || fail "expected Hyprland.dispatch"
+rg -q 'hl\.dsp\.focus' BarWidget.qml || fail "expected the Lua workspace dispatcher"
+rg -q 'Hyprland\.dispatch\("workspace ' BarWidget.qml && fail "legacy dispatch syntax is a no-op on Hyprland 0.56+"
 
 # WidgetButton.text must be a closed pill, not compositor strings.
 rg -q 'function pillText' BarWidget.qml || fail "pillText missing"
