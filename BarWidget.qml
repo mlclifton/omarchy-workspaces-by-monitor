@@ -85,7 +85,7 @@ BarWidget {
 
   function pillText(value) {
     var text = String(value || "")
-    if (!/^[0-9LRTB|()[\]]{1,8}$/.test(text)) return ""
+    if (!/^[0-9|()[\]]{1,8}$/.test(text)) return ""
     return text
   }
 
@@ -167,7 +167,6 @@ BarWidget {
       var activeWs = monitors[i].activeWorkspace
       var activeId = activeWs ? activeWs.id : -1
       if (shown > 0) out.push({ kind: "sep" })
-      out.push({ kind: "label", text: tag, monitor: monName })
       for (var n = 0; n < ids.length; n++) {
         if (out.length >= root.maxItems) break
         out.push({
@@ -233,12 +232,8 @@ BarWidget {
 
   function tooltipFor(item) {
     if (!item) return ""
-    var isThis = item.monitor && root.thisMonitorName !== "" && item.monitor === root.thisMonitorName
-    if (item.kind === "label") {
-      var here = isThis ? "this screen · " : ""
-      return root.plain(here + root.monitorPhrase(item.text))
-    }
     if (item.kind !== "ws") return ""
+    var isThis = item.monitor && root.thisMonitorName !== "" && item.monitor === root.thisMonitorName
     var where = isThis ? "this screen" : root.monitorPhrase(item.tag)
     var conn = root.connectorName(item.monitor)
     if (conn !== "") where += " · " + conn
@@ -335,7 +330,6 @@ BarWidget {
         required property var modelData
 
         readonly property bool isSep: modelData && modelData.kind === "sep"
-        readonly property bool isLabel: modelData && modelData.kind === "label"
         readonly property bool isWs: modelData && modelData.kind === "ws"
         readonly property int workspaceId: isWs ? Number(modelData.ws) : 0
         readonly property var workspace: isWs ? root.workspaceById(workspaceId) : null
@@ -352,16 +346,15 @@ BarWidget {
         bar: root.bar
         text: {
           if (isSep) return root.pillText("|")
-          if (isLabel) return root.pillText(modelData.text)
           if (there) return root.pillText("[" + numberText + "]")
           if (here) return root.pillText("(" + numberText + ")")
           return root.pillText(numberText)
         }
         active: false
-        dimmed: isSep || (isLabel && !isThis)
-        opacity: isSep ? 0.45 : (isLabel ? 1 : (occupied || onScreen ? 1 : 0.5))
+        dimmed: isSep
+        opacity: isSep ? 0.45 : (occupied || onScreen ? 1 : 0.5)
         pressable: isWs
-        interactive: isWs || isLabel
+        interactive: isWs
         tooltipText: root.tooltipFor(modelData)
         horizontalMargin: isSep ? 2 : 6
         verticalPadding: 6

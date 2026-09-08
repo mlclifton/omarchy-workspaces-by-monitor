@@ -5,10 +5,10 @@ The stock Omarchy bar repeats 1–5 on every screen and only marks the focused w
 This widget groups the numbers by screen:
 
 ```
-L (2) 4 | R 1 [8]
+(2) 4 | 1 [8]
 ```
 
-- **L / R** (or **T / B** if the screens are stacked) is the monitor
+- `|` separates one screen's workspaces from the next, left to right
 - `(2)` is the workspace this screen is showing, the one you are looking at
 - A plain number is another workspace on this screen
 - `[8]` is what the other screen is showing
