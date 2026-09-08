@@ -22,7 +22,7 @@ Click a number to focus that workspace. Super+N from Hyprland still works as usu
 
 ```bash
 omarchy plugin add https://github.com/mlclifton/omarchy-workspaces-by-monitor.git
-omarchy plugin enable jordan.workspaces
+omarchy plugin enable mlclifton.workspaces
 ```
 
 Take `omarchy.workspaces` off the bar if both switchers are showing.
@@ -34,7 +34,7 @@ Requires Omarchy's Hyprland bar (Quickshell). No extra packages.
 ## Removing
 
 ```bash
-omarchy plugin remove jordan.workspaces
+omarchy plugin remove mlclifton.workspaces
 ```
 
 This plugin writes no state, cache, credentials, units, or hooks. Nothing survives removal except a git checkout you made yourself outside Omarchy.
@@ -48,7 +48,7 @@ This is a fork of [jordanpartridge/omarchy-workspaces](https://github.com/jordan
 - Clicking a pill works on Hyprland 0.56+. Dispatch arguments are parsed as Lua there, so upstream's `workspace N` is a syntax error on the wire and fails silently.
 - Optional hover previews. With [omarchy-workspace-thumbnail-svc](https://github.com/mlclifton/omarchy-workspace-thumbnail-svc) installed and enabled, hovering a pill shows a thumbnail of that workspace. Without it the widget behaves exactly as it does here.
 
-It still declares the plugin id `jordan.workspaces`, so install this or upstream's, not both.
+The plugin id is `mlclifton.workspaces`, distinct from upstream's `jordan.workspaces`, so the two can sit side by side if you want to compare them. Take one off the bar if both are showing.
 
 ## License
 

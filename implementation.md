@@ -1,8 +1,13 @@
 # Implementation notes
 
 Working notes for this Omarchy bar widget. It installs as plugin id
-`jordan.workspaces` — inherited from upstream and not yet renamed, so the id and the
-installed directory still carry upstream's namespace even though the code here does not.
+`mlclifton.workspaces`, renamed from upstream's `jordan.workspaces` so the two can be
+installed side by side. That id is the single source of truth: `Bar.qml` overwrites a
+widget's own `moduleName` with the id from the bar config entry
+(`~/.config/omarchy/shell.json`, `bar.layout.<region>[].id`), and `canonicalWidgetId()`
+is the identity function. Change the id and the manifest, the `moduleName` line, the
+README commands, `test_structure.sh`'s pins and every installed config naming it must all
+move together.
 
 **This file exists to prime a coding agent's context.** Read it before touching
 anything: it records what a full repo review would otherwise have to rediscover
@@ -99,32 +104,26 @@ active workspace renders as `[n]` with nothing parenthesised. Degraded but harml
 
 ## Testing loop
 
-The installed copy is a plain git checkout at `~/.config/omarchy/plugins/jordan.workspaces`
-— named for the plugin id, not the repo. **Check what it tracks before trusting it.** It was
-installed from upstream and is still a clone of `jordanpartridge/omarchy-workspaces` at
-`e3d5e21`, so a `git checkout` or `omarchy plugin update` in there restores *upstream's*
-widget: no parens, the monitor label pills back, and clicking a pill silently doing nothing.
-Reinstall it from `origin` to make that directory the fork's code:
+The installed copy is a plain git checkout at `~/.config/omarchy/plugins/mlclifton.workspaces`
+— the directory is named for the plugin id, not the repo. **Check what it tracks before
+trusting it**: `git -C ~/.config/omarchy/plugins/mlclifton.workspaces remote -v` should be
+this repo. A directory left tracking upstream restores *upstream's* widget on any
+`git checkout` or `omarchy plugin update` — no parens, the monitor label pills back, and
+clicking a pill silently doing nothing.
+
+There is no `omarchy plugin` dev-link subcommand, so iterating means copying over it:
 
 ```bash
-omarchy plugin remove jordan.workspaces
-omarchy plugin add https://github.com/mlclifton/omarchy-workspaces-by-monitor.git
-omarchy plugin enable jordan.workspaces
-```
-
-There is no `omarchy plugin` dev-link subcommand, so iterating still means copying over it:
-
-```bash
-cp BarWidget.qml ~/.config/omarchy/plugins/jordan.workspaces/BarWidget.qml
+cp BarWidget.qml ~/.config/omarchy/plugins/mlclifton.workspaces/BarWidget.qml
 omarchy restart shell
 ```
 
 That leaves the installed checkout dirty, which makes `omarchy plugin update
-jordan.workspaces` fail until you revert — and the revert restores whatever that checkout
+mlclifton.workspaces` fail until you revert — and the revert restores whatever that checkout
 tracks, so make sure that is `origin` and not upstream:
 
 ```bash
-git -C ~/.config/omarchy/plugins/jordan.workspaces checkout BarWidget.qml && omarchy restart shell
+git -C ~/.config/omarchy/plugins/mlclifton.workspaces checkout BarWidget.qml && omarchy restart shell
 ```
 
 Verify visually — QML binding bugs do not throw, they just render nothing. Each monitor has
@@ -267,6 +266,10 @@ Two things to keep in mind:
   (`origin`, the standalone repo); `active-workspace-parens` stays pinned at
   `ad14084` to match open upstream PR #1 on the `fork` remote; `lua-dispatch-fix`
   holds `6e83421` cherry-picked onto `upstream/main` for a possible PR #2. The
-  plugin id is still `jordan.workspaces` and `moduleName` still matches it, so
-  this build and upstream's collide if both are installed — renaming means a
-  reinstall under a new plugin directory plus a `shell.json` edit.
+  plugin id was still `jordan.workspaces` at that point, renamed in the entry
+  below.
+- `2026-09-08` renamed the plugin id `jordan.workspaces` → `mlclifton.workspaces`,
+  so this widget and upstream's can be installed side by side. Manifest `id`,
+  `moduleName`, the README commands and `test_structure.sh`'s pins moved together;
+  on this machine the `shell.json` bar entry was repointed and the plugin
+  reinstalled from `origin` under the new directory.

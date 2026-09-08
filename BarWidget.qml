@@ -7,7 +7,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "jordan.workspaces"
+  moduleName: "mlclifton.workspaces"
 
   readonly property int maxMonitors: 8
   readonly property int maxWorkspaceId: 10
