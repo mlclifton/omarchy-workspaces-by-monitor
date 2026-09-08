@@ -6,7 +6,7 @@
   "author": "Jordan Partridge",
   "license": "MIT",
   "homepage": "https://github.com/jordanpartridge/omarchy-workspaces",
-  "description": "Bar workspace pills grouped by monitor. Plain number is this screen. Brackets are the other screen.",
+  "description": "Bar workspace pills grouped by monitor. Parentheses are the workspace this screen is showing. Brackets are the other screen.",
   "kinds": [
     "bar-widget"
   ],
