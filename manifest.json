@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "jordan.workspaces",
+  "name": "Workspaces by monitor",
+  "version": "1.0.0",
+  "author": "Jordan Partridge",
+  "license": "MIT",
+  "homepage": "https://github.com/jordanpartridge/omarchy-workspaces",
+  "description": "Bar workspace pills grouped by monitor. Plain number is this screen. Brackets are the other screen.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Workspaces by monitor",
+    "description": "Workspace numbers grouped by monitor",
+    "category": "Compositor",
+    "allowMultiple": false,
+    "defaultSection": "left"
+  }
+}
