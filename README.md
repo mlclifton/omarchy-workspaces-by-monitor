@@ -16,7 +16,7 @@ This widget groups the numbers by screen:
 - `[8]` is what the other screen is showing
 - A dim number is on that monitor, not showing
 
-Click a number to focus that workspace. Super+N from Hyprland still works as usual.
+Click a number to focus that workspace. Right-click one to open the next unused workspace on that screen — it is allocated to the monitor the pill belongs to, not to whichever screen has focus, and you land on it empty. Super+N from Hyprland still works as usual.
 
 ## Install
 

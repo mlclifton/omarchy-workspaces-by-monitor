@@ -245,6 +245,35 @@ Two things to keep in mind:
   no clean runtime fallback: `Hyprland.dispatch()` is fire-and-forget, so a
   failed dispatch cannot be detected and retried in the other syntax.
 
+## Right-click opens a free workspace
+
+Right-clicking a `ws` pill allocates the lowest unused id (1..`maxWorkspaceId`) to
+**that pill's monitor** and switches to it. `WidgetButton` already accepts all three
+buttons and emits `pressed(int button)` — the handler takes the argument and branches
+on `Qt.RightButton`; `pressable: isWs` is what keeps `sep` pills out of it.
+
+Two dispatches, in this order:
+
+```qml
+Hyprland.dispatch("hl.dsp.focus({ monitor = \"" + name + "\" })")
+Hyprland.dispatch("hl.dsp.focus({ workspace = \"" + n + "\" })")
+```
+
+Hyprland creates a workspace on whatever monitor is focused, so focusing the monitor
+first is what binds the new workspace to the right screen. **There is no
+`hl.dsp.focusmonitor`** — it is a nil field and the dispatch errors on the wire, the
+same silent failure as the legacy syntax. The Lua API is namespaced
+(`hl.dsp.focus`, `hl.dsp.window.*`, `hl.dsp.workspace.*`); read
+`/usr/share/hypr/stubs/hl.meta.lua` for the field list rather than guessing, and note
+it types every dispatcher as `fun(...)`, so the accepted table keys are not documented
+there — probe them with `hyprctl dispatch`.
+
+`nextFreeWorkspace()` counts an id as used if a workspace with that id exists at all.
+Hyprland destroys an empty workspace when you leave it, so existing ids are in use;
+returns `-1` when 1..10 are all taken, and `openFreeWorkspace()` then does nothing.
+`connectorName()` validates the monitor before it reaches the Lua string, the same
+load-bearing role the numeric checks play in `focusWorkspace()`.
+
 ## History
 
 - `e3d5e21` upstream tip when this fork was taken.
@@ -273,3 +302,10 @@ Two things to keep in mind:
   `moduleName`, the README commands and `test_structure.sh`'s pins moved together;
   on this machine the `shell.json` bar entry was repointed and the plugin
   reinstalled from `origin` under the new directory.
+- `2026-09-08` right-click on a pill opens the next unused workspace on that
+  pill's monitor. Verified the dispatch pair by hand over `hyprctl`, then from
+  inside the widget with a throwaway `Timer` calling `openFreeWorkspace("DP-2")`,
+  which is the only way to exercise the QML path without a synthetic click.
+  Nothing on this machine can synthesise a right-click (`wtype` is keyboard
+  only), so the `Qt.RightButton` branch itself was never machine-verified —
+  confirm it by hand after any change to the press handler.

@@ -31,6 +31,10 @@ rg -q 'moduleName: "mlclifton.workspaces"' BarWidget.qml || fail "moduleName mis
 rg -q 'Hyprland\.dispatch\(' BarWidget.qml || fail "expected Hyprland.dispatch"
 rg -q 'hl\.dsp\.focus' BarWidget.qml || fail "expected the Lua workspace dispatcher"
 rg -q 'Hyprland\.dispatch\("workspace ' BarWidget.qml && fail "legacy dispatch syntax is a no-op on Hyprland 0.56+"
+# Right-click opens a free workspace on the pill's own monitor. There is no
+# hl.dsp.focusmonitor; monitor focus is hl.dsp.focus({ monitor = ... }).
+rg -q 'hl\.dsp\.focus\(\{ monitor' BarWidget.qml || fail "expected the monitor focus dispatcher"
+rg -q 'hl\.dsp\.focusmonitor' BarWidget.qml && fail "hl.dsp.focusmonitor does not exist"
 
 # WidgetButton.text must be a closed pill, not compositor strings.
 rg -q 'function pillText' BarWidget.qml || fail "pillText missing"

@@ -188,6 +188,26 @@ BarWidget {
     Hyprland.dispatch("hl.dsp.focus({ workspace = \"" + n + "\" })")
   }
 
+  function nextFreeWorkspace() {
+    var used = Object.create(null)
+    var values = root.workspaceValues
+    var cap = Math.min(values.length, root.maxScan)
+    for (var i = 0; i < cap; i++) used[values[i].id] = true
+    for (var n = 1; n <= root.maxWorkspaceId; n++) {
+      if (!used[n]) return n
+    }
+    return -1
+  }
+
+  function openFreeWorkspace(monitor) {
+    var name = root.connectorName(monitor)
+    if (name === "") return
+    var n = root.nextFreeWorkspace()
+    if (n !== n || n < 1 || n > root.maxWorkspaceId || Math.floor(n) !== n) return
+    Hyprland.dispatch("hl.dsp.focus({ monitor = \"" + name + "\" })")
+    Hyprland.dispatch("hl.dsp.focus({ workspace = \"" + n + "\" })")
+  }
+
   function requestPreview(anchor, id, monitor) {
     if (!root.thumbnails || !anchor) return
     if (root.bar) root.bar.hideTooltip(anchor)
@@ -360,8 +380,10 @@ BarWidget {
         verticalPadding: 6
         fixedWidth: root.vertical ? root.barSize : (isSep ? Style.space(10) : (there || here ? Style.space(28) : Style.space(20)))
         fixedHeight: root.barSize
-        onPressed: function() {
-          if (isWs) root.focusWorkspace(workspaceId)
+        onPressed: function(button) {
+          if (!isWs) return
+          if (button === Qt.RightButton) root.openFreeWorkspace(modelData.monitor)
+          else root.focusWorkspace(workspaceId)
         }
 
         Connections {
