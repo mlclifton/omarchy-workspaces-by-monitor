@@ -24,7 +24,7 @@ omarchy plugin enable jordan.workspaces
 
 Take `omarchy.workspaces` off the bar if both switchers are showing.
 
-Plugins run as unsandboxed code inside `omarchy-shell`. Review the tree before enabling. The installer only clones files; it does not run helpers or sudo.
+Plugins run as unsandboxed code inside `omarchy-shell`. Review the tree before enabling. The installer only clones files; it does not run helpers or elevate.
 
 Requires Omarchy's Hyprland bar (Quickshell). No extra packages.
 
