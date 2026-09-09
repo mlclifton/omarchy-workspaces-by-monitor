@@ -17,6 +17,21 @@ id=$(jq -r .id manifest.json)
 [[ "$(jq -r .entryPoints.barWidget manifest.json)" == "BarWidget.qml" ]] || fail "entryPoints"
 jq -e '.omarchy.clonedFrom | not' manifest.json >/dev/null || fail "clonedFrom must be absent"
 
+# ------------------------------------------------------------ vendored service
+#
+# The thumbnail service ships inside this plugin and under this plugin's id.
+# Since Omarchy 4.0.3 a third-party plugin may only look up its own service, so
+# a separate thumbnails plugin would be unreachable. See implementation.md.
+jq -e '.kinds | index("service")' manifest.json >/dev/null || fail "kinds must include 'service'"
+[[ "$(jq -r .entryPoints.service manifest.json)" == "thumbnails/Service.qml" ]] || fail "service entry point"
+for f in thumbnails/Service.qml thumbnails/WorkspaceThumbnail.qml thumbnails/WindowTile.qml thumbnails/lib/Geometry.js; do
+  [[ -f "$f" ]] || fail "$f missing - re-run install.sh in the thumbnails repo"
+done
+rg -q 'serviceFor\("mlclifton.workspaces"\)' BarWidget.qml \
+  || fail "the widget must look up its own id; another plugin's service is unreachable"
+rg -q 'serviceFor\("mlclifton.workspace-thumbnails"\)' BarWidget.qml \
+  && fail "stale cross-plugin service lookup - that id no longer resolves"
+
 rg -q 'omarchy plugin remove mlclifton.workspaces' README.md || fail "README missing remove command"
 rg -q 'omarchy plugin add https://github.com/mlclifton/omarchy-workspaces-by-monitor.git' README.md || fail "README missing add URL"
 rg -q 'fork of \[jordanpartridge/omarchy-workspaces\]' README.md || fail "README missing upstream attribution"

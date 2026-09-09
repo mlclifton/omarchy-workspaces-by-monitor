@@ -43,9 +43,13 @@ BarWidget {
   readonly property var workspaceValues: Hyprland.workspaces.values
   readonly property var monitorValues: Hyprland.monitors.values
   readonly property int focusedId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1
+  // The thumbnail service is vendored into thumbnails/ and mounted under this
+  // plugin's own id, so this asks for ourselves. Since Omarchy 4.0.3 that is
+  // the only lookup that resolves: a third-party plugin may not reach another
+  // plugin's service. See implementation.md, "Why the service lives here".
   readonly property var thumbnails: {
     if (!root.bar || !root.bar.shell || typeof root.bar.shell.serviceFor !== "function") return null
-    return root.bar.shell.serviceFor("mlclifton.workspace-thumbnails")
+    return root.bar.shell.serviceFor("mlclifton.workspaces")
   }
   property var hoveredAnchor: null
   property var pendingAnchor: null
@@ -210,6 +214,9 @@ BarWidget {
 
   function requestPreview(anchor, id, monitor) {
     if (!root.thumbnails || !anchor) return
+    // The service can no longer reach omarchy.background, so nothing tells it
+    // the theme changed. Re-read the wallpaper symlink as the preview opens.
+    if (typeof root.thumbnails.refreshWallpaper === "function") root.thumbnails.refreshWallpaper()
     if (root.bar) root.bar.hideTooltip(anchor)
     previewCloseTimer.stop()
     root.hoveredAnchor = anchor

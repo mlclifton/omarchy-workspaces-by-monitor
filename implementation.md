@@ -158,25 +158,43 @@ Zero comments in `BarWidget.qml`, and the existing code is deliberate about it. 
 (`maxMonitors`, `maxScan`, `maxItems`) on every loop, `readonly property` for derived state,
 `var` and C-style `for` loops rather than modern JS. Match it.
 
-## Workspace previews (`mlclifton.workspace-thumbnails`)
+## Workspace previews
 
 Hovering a `ws` pill opens a monitor-shaped thumbnail of that workspace. The
-widget draws none of it: the thumbnail comes from a separate **service** plugin
-at `~/Projects/omarchy-workspace-thumbnails`
+widget draws none of it. The thumbnail comes from a service whose source lives
+in its own repo at `~/Projects/omarchy-workspace-thumbnails`
 (https://github.com/mlclifton/omarchy-workspace-thumbnail-svc), whose
 `IMPLEMENTATION.md` is the place to look for anything about the thumbnail itself.
 
-Why a service and not code in here: bar widgets cannot reach into another
-plugin's directory (`PluginRegistry.entryPointUrl` sandboxes entry points to
-their own `sourceDir`), and four installed plugins had already each rebuilt the
-same thumbnail. `bar.shell.serviceFor(id)` is the supported way across.
+### Why the service lives here
+
+`thumbnails/` is a **vendored copy** of that repo, mounted under *this* plugin's
+id. Do not edit it directly — change the source repo and re-run its
+`install.sh`, which copies the files across and checks this manifest.
+
+It used to be a separate plugin, `mlclifton.workspace-thumbnails`, reached with
+`serviceFor("mlclifton.workspace-thumbnails")`. Omarchy 4.0.3 ended that.
+Third-party entry points now receive a capability-scoped facade instead of the
+shell root, and its `serviceFor` calls `pluginOwnsTarget` first: only the
+**caller's own id** resolves, and anything else returns null silently. That
+came in as a security fix (upstream PR 9618), because the same unscoped
+injection also exposed `omarchy.lock` and `omarchy.polkit`.
+
+So the service ships inside this plugin, the manifest declares both
+`bar-widget` and `service` kinds, and the widget looks up itself. If you split
+it back out, hover previews stop working and nothing logs an error.
 
 The wiring in `BarWidget.qml`:
 
-- `thumbnails` resolves the service through `root.bar.shell.serviceFor(...)`.
+- `thumbnails` resolves the service through
+  `root.bar.shell.serviceFor("mlclifton.workspaces")` — **this plugin's own id**.
   `bar.shell` is injected by `shell.qml` (`shell: shell` on the `Bar`).
-  It is `null` if the service is not installed **or not listed in `shell.json`'s
-  top-level `plugins[]`** — installing alone does not enable a service.
+  It is `null` if the vendored `thumbnails/` directory or the manifest's
+  `entryPoints.service` is missing. A `plugins[]` entry in `shell.json` is *not*
+  needed: a bar-layout entry already counts as enabled.
+- `requestPreview` calls `thumbnails.refreshWallpaper()` before opening. The
+  service can no longer reach `omarchy.background` either, so nothing tells it
+  the theme changed and it re-reads the symlink on demand instead.
 - `requestPreview` / `leavePreview` / `openPreview` / `closePreview` plus
   `previewOpenTimer` (120ms) and `previewCloseTimer` (200ms).
 - A `Loader` holding a `PopupCard`, sized `Style.space(300)` wide by
@@ -188,7 +206,8 @@ Four things that will bite:
 
 1. **Everything degrades to null-safe.** If `thumbnails` is null, `requestPreview`
    returns immediately and the widget behaves exactly as it did before. Keep it
-   that way — the widget must stay useful without the service installed.
+   that way — the widget must stay useful if the vendored service fails to load.
+   This is also why the breakage above was silent for so long.
 2. **The tooltip races the preview.** `WidgetButton`'s `MouseArea.onEntered`
    calls `bar.showTooltip`, and that can land *after* `requestPreview`'s
    `hideTooltip`, leaving the tooltip painted over the card. Hiding it again in
@@ -282,6 +301,10 @@ load-bearing role the numeric checks play in `focusWorkspace()`.
   updated README + manifest `description`. Version left at 1.0.0 for the maintainer to own;
   `preview.png` left stale (shows `L [1] 4 | R 8`, would now be `L [1] 4 | R (8)`).
 - `7fad7c7` (2026-09-08) wired hover previews to `mlclifton.workspace-thumbnails`.
+- (2026-09-09) previews stopped rendering after an update to Omarchy 4.0.3, which
+  restricted `serviceFor` to the caller's own plugin id. The thumbnail service is
+  now vendored into `thumbnails/` and mounted under this plugin's id, and the
+  manifest gained the `service` kind. See "Why the service lives here".
 - `6e83421` (2026-09-08) fixed click-to-focus: legacy `workspace N` dispatch is a no-op on
   Hyprland 0.56+; switched to `hl.dsp.focus`, pinned by `test_structure.sh`.
 - `f82d694` (2026-09-08) dropped the per-monitor `label` pill. The tag pill led each group

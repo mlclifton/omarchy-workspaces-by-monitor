@@ -8,10 +8,13 @@
   "homepage": "https://github.com/mlclifton/omarchy-workspaces-by-monitor",
   "description": "Bar workspace pills grouped by monitor. Parentheses are the workspace this screen is showing. Brackets are the other screen.",
   "kinds": [
-    "bar-widget"
+    "bar-widget",
+    "service"
   ],
+  "keepLoaded": true,
   "entryPoints": {
-    "barWidget": "BarWidget.qml"
+    "barWidget": "BarWidget.qml",
+    "service": "thumbnails/Service.qml"
   },
   "barWidget": {
     "displayName": "Workspaces by monitor",

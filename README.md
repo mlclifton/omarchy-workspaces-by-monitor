@@ -46,7 +46,7 @@ This is a fork of [jordanpartridge/omarchy-workspaces](https://github.com/jordan
 - No per-monitor tag pill. Upstream leads each group with `L`/`R` (or `1`/`2`/`3`), which reads as another workspace number; here `|` alone separates the screens.
 - Parentheses mark the workspace this screen is showing. Proposed back upstream as PR #1.
 - Clicking a pill works on Hyprland 0.56+. Dispatch arguments are parsed as Lua there, so upstream's `workspace N` is a syntax error on the wire and fails silently.
-- Optional hover previews. With [omarchy-workspace-thumbnail-svc](https://github.com/mlclifton/omarchy-workspace-thumbnail-svc) installed and enabled, hovering a pill shows a thumbnail of that workspace. Without it the widget behaves exactly as it does here.
+- Hover previews. Hovering a pill shows a monitor-shaped thumbnail of that workspace, with live window content. Empty workspaces show the wallpaper instead. The thumbnail code is vendored into `thumbnails/` from [omarchy-workspace-thumbnail-svc](https://github.com/mlclifton/omarchy-workspace-thumbnail-svc) and needs no separate install. Requires Omarchy 4.0.3 or later.
 
 The plugin id is `mlclifton.workspaces`, distinct from upstream's `jordan.workspaces`, so the two can sit side by side if you want to compare them. Take one off the bar if both are showing.
 
